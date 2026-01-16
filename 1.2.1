@@ -1,0 +1,56 @@
+#include <WiFi.h>
+#include <esp_now.h>
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver(0x40);
+
+// Servo pulse range (adjust if needed)
+#define SERVO_MIN  110
+#define SERVO_MAX  490
+
+typedef struct {
+  int a;
+  int b;
+  int c;
+} payload_t;
+
+void OnReceive(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
+  payload_t data;
+  memcpy(&data, incomingData, sizeof(data));
+
+  Serial.print("Received -> ");
+  Serial.print(data.a);
+  Serial.print(", ");
+  Serial.print(data.b);
+  Serial.print(", ");
+  Serial.println(data.c);
+  pca.setPWM(0, 0, p1);
+  pca.setPWM(1, 0, p2);
+  pca.setPWM(2, 0, p3);
+
+}
+
+void setup() {
+  Serial.begin(115200);
+  //PCA9685 setup
+  // SDA = GPIO 4, SCL = GPIO 5
+  Wire.begin(4, 5);
+  pca.begin();
+  pca.setPWMFreq(50);  // Standard servo frequency
+  delay(10);
+
+  WiFi.mode(WIFI_STA);
+  Serial.print("My MAC: ");
+  Serial.println(WiFi.macAddress());
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ESP-NOW init failed");
+    return;
+  }
+
+  esp_now_register_recv_cb(OnReceive);
+}
+void loop() {
+  // nothing needed
+}
